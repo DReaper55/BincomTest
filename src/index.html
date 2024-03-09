@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bincom Test</title>
+</head>
+<body>
+
+  <style>
+    nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  background-color: #c5c1c1;
+  color: rgb(26, 25, 25);
+}
+
+.links {
+  display: flex;
+  gap: 20px;
+}
+
+.links a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.links a:hover {
+  color: #ccc;
+}
+
+  </style>
+<nav>
+  <a href="result-page">Result page</a>
+  <a href="summed-total-page">Summed total page</a>
+  <a href="store-results-page">Store new result page</a>
+</nav>
+
+<script>
+
+  // Get all the links
+const links = document.querySelectorAll(".links a");
+
+// Loop through the links and add a click event listener
+links.forEach((link) => {
+  link.addEventListener("click", () => {
+    // Remove the active class from the previous link
+    document.querySelector(".links a.active").classList.remove("active");
+    // Add the active class to the current link
+    link.classList.add("active");
+  });
+});
+</script>
+
+</body>
+</html>

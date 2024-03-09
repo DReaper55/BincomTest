@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Announced Polling Unit Result</title>
+</head>
+<body>
+  <h1>Polling Unit Result</h1>
+  
+  <!-- Search Form -->
+  <form id="searchForm">
+    <label for="uniqueId">Search by Polling unit ID:</label>
+    <input type="text" id="uniqueId" name="uniqueId" required>
+    <button type="submit">Search</button>
+  </form>
+
+  <!-- Display Result Table -->
+  <div>
+    <!-- Table content will be inserted here dynamically -->
+
+<table border="1" id="resultTable">
+    <tr>
+      <th>Unique ID</th>
+      <th>Polling Unit Unique ID</th>
+      <th>Party Abbreviation</th>
+      <th>Party Score</th>
+      <th>Entered By User</th>
+      <th>Date Entered</th>
+      <th>User IP Address</th>
+    </tr>
+  </table>
+  
+  </div>
+
+  <!-- <script src="./result-page.js"></script> -->
+  
+
+  <script>
+document.addEventListener('DOMContentLoaded', function () {
+  console.log('DOMContentLoaded event fired.');
+
+  // Handle form submission
+  document.getElementById('searchForm').addEventListener('submit', function (e) {
+    console.log('Form submitted.');
+
+    e.preventDefault();
+
+    // Get the unique ID from the input field
+    const uniqueId = document.getElementById('uniqueId').value;
+
+    // Make a fetch request to fetch the result directly from your server-side logic
+    fetch(`/getResult?uniqueId=${uniqueId}`)
+      .then(response => {
+
+        if (!response.ok) {
+          throw new Error(`Error fetching result. Status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(results => {
+        // Manipulate the DOM with the fetched results
+        displayResults(results);
+      })
+      .catch(error => {
+        // Handle errors, e.g., display an error message
+        document.getElementById('resultTable').innerHTML = `<p>${error.message}</p>`;
+      });
+  });
+});
+
+function displayResults(results) {
+  
+  // Get the table element
+  const table = document.getElementById('resultTable');
+
+  // Clear existing content
+  table.innerHTML = '';
+
+  // Create table header
+  const headerRow = table.insertRow();
+  Object.keys(results[0]).forEach(key => {
+    const headerCell = headerRow.insertCell();
+    headerCell.textContent = key;
+  });
+
+  // Create table rows with data
+  results.forEach(result => {
+    const row = table.insertRow();
+    Object.values(result).forEach(value => {
+      const cell = row.insertCell();
+      cell.textContent = value;
+    });
+  });
+}
+  
+  </script>
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Polling Unit Entry Form</title>
+  </head>
+  <body>
+    <h1>Polling Unit Entry Form</h1>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+      }
+
+      h1 {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 10px;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 15px;
+        box-sizing: border-box;
+      }
+
+      #partyScores {
+        margin-bottom: 20px;
+      }
+
+      button {
+        padding: 10px;
+        background-color: #4caf50;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+      }
+    </style>
+
+    <!-- Local Government Dropdown -->
+    <label for="lgaDropdown">Select Local Government:</label>
+    <select id="lgaDropdown"></select>
+
+    <!-- Ward Dropdown -->
+    <label for="wardDropdown">Select Ward:</label>
+    <select id="wardDropdown"></select>
+
+    <!-- Text Fields for Polling Unit Information -->
+    <label for="pollingUnitNumber">Polling Unit Number:</label>
+    <input type="text" id="pollingUnitNumber" required />
+
+    <label for="pollingUnitName">Polling Unit Name:</label>
+    <input type="text" id="pollingUnitName" required />
+
+    <label for="userName">Name of user:</label>
+    <input type="text" id="userName" required />
+
+    <!-- Text Fields for Party Scores -->
+    <h2>Party Scores</h2>
+    <div id="partyScores"></div>
+
+    <!-- Save Button -->
+    <button id="saveButton">Save</button>
+
+    <script src="../../domain/entities/PollingUnit.js"></script>
+    <script src="../../domain/entities/AnnouncedPuResult.js"></script>
+
+    <script>
+      // app.js
+      document.addEventListener("DOMContentLoaded", function () {
+        // Fetch all local governments and populate the dropdown
+        fetchAllLgas();
+
+        // Event listener for dropdown change
+        document
+          .getElementById("lgaDropdown")
+          .addEventListener("change", function () {
+            const selectedLgaId = this.value;
+            if (selectedLgaId) {
+              // Fetch and populate wards based on the selected local government
+              fetchWardsByLgaId(selectedLgaId);
+            }
+          });
+
+        // Event listener for Save button click
+        document
+          .getElementById("saveButton")
+          .addEventListener("click", function () {
+            const pollingUnitId = Math.floor(Math.random() * 10000);
+            
+            // Collect data and save to the database
+            savePollingUnitData(pollingUnitId);
+
+            // Save the polling result
+            savePuResult(pollingUnitId);
+          });
+
+        // Fetch all parties and create text fields for party scores
+        fetchAllParties();
+      });
+
+      function fetchAllLgas() {
+        // Make a fetch request to get all local governments
+        fetch("/getAllLgas")
+          .then((response) => response.json())
+          .then((lgas) => {
+            // Populate the local government dropdown
+            const dropdown = document.getElementById("lgaDropdown");
+            lgas.forEach((lga) => {
+              const option = document.createElement("option");
+              option.value = lga.lga_id;
+              option.text = lga.lga_name;
+              dropdown.appendChild(option);
+            });
+          })
+          .catch((error) =>
+            console.error("Error fetching local governments:", error)
+          );
+      }
+
+      function fetchWardsByLgaId(lgaId) {
+        // Make a fetch request to get wards by local government ID
+        fetch(`/getWardsByLgaId?lgaId=${lgaId}`)
+          .then((response) => response.json())
+          .then((wards) => {
+            // Populate the ward dropdown
+            const dropdown = document.getElementById("wardDropdown");
+            // Clear existing options
+            dropdown.innerHTML = '<option value="">Select Ward</option>';
+            // Populate with new options
+            wards.forEach((ward) => {
+              const option = document.createElement("option");
+              option.value = ward.ward_id;
+              option.text = ward.ward_name;
+              dropdown.appendChild(option);
+            });
+          })
+          .catch((error) => console.error("Error fetching wards:", error));
+      }
+
+      function fetchAllParties() {
+        // Make a fetch request to get all parties
+        fetch("/getAllParties")
+          .then((response) => response.json())
+          .then((parties) => {
+            // Populate the party scores section with text fields
+            const partyScoresDiv = document.getElementById("partyScores");
+            parties.forEach((party) => {
+              const label = document.createElement("label");
+              label.textContent = `${party.partyname}:`;
+              label.id = `L${party.partyid}`;
+              const input = document.createElement("input");
+              input.type = "number";
+              input.id = party.partyid;
+              partyScoresDiv.appendChild(label);
+              partyScoresDiv.appendChild(input);
+            });
+          })
+          .catch((error) => console.error("Error fetching parties:", error));
+      }
+
+      function savePuResult(puId) {
+        const pollingResult = new AnnouncedPuResult({
+          polling_unit_uniqueid: puId,
+          entered_by_user: document.getElementById("userName").value,
+          date_entered: Date.now(),
+          user_ip_address: Math.floor(Math.random() * 10000),
+        });
+
+        // Collect party scores
+        const partyScoreInputs =
+          document.querySelectorAll("#partyScores input");
+        partyScoreInputs.forEach((input) => {
+
+            const partyAbb = document.getElementById(`L${input.id}`).textContent;
+
+            // Remove trailing ':'
+            const partyAbbStr = partyAbb.replace(":", "");
+
+          pollingResult.partyAbbreviation = partyAbbStr;
+          pollingResult.partyScore = input.value;
+
+          // Make a fetch request to save data to the database
+          fetch("/createAnnPuResult", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(pollingResult.JSON()),
+          })
+            .then((response) => response.json())
+            .then((result) => {
+              // Handle the result if needed
+              console.log("Result saved:", result);
+            })
+            .catch((error) => console.error("Error saving data:", error));
+        });
+      }
+
+      function savePollingUnitData(puId) {
+        const pollingUnit = new PollingUnit({
+          polling_unit_id: puId,
+          ward_id: document.getElementById("wardDropdown").value,
+          lga_id: document.getElementById("lgaDropdown").value,
+          polling_unit_number:
+            document.getElementById("pollingUnitNumber").value,
+          polling_unit_name: document.getElementById("pollingUnitName").value,
+          entered_by_user: document.getElementById("userName").value,
+          date_entered: Date.now()
+        });
+
+        // Make a fetch request to save data to the database
+        fetch("/createPollingUnit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(pollingUnit.toJSON()),
+        })
+          .then((response) => response.json())
+          .then((result) => {
+            // Handle the result if needed
+            console.log("Result saved:", result);
+          })
+          .catch((error) => console.error("Error saving data:", error));
+      }
+    </script>
+  </body>
+</html>
